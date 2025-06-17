@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Delete Employee{% endblock %}
+
+{% block content %}
+<h2>Delete Employee</h2>
+<p>Are you sure you want to delete <strong>{{ object.user.first_name }} {{ object.user.last_name }}</strong>?</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Yes, Delete</button>
+  <a href="{% url 'dashboard:employees' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

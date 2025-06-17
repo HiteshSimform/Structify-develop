@@ -1,0 +1,50 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Salaries{% endblock %}
+
+{% block content %}
+<h2>Salaries</h2>
+
+<form class="row g-3 mb-3">
+  <div class="col-auto">
+    <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search employee…">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary">Search</button>
+  </div>
+</form>
+
+<table class="table table-bordered table-striped align-middle">
+  <thead class="table-dark">
+    <tr>
+      {% for col_label in columns %}
+      <th>
+        <a href="?sort={{ col_label.0 }}&dir={% if request.GET.sort == col_label.0 and request.GET.dir != 'desc' %}desc{% else %}asc{% endif %}">
+          {{ col_label.1 }}
+        </a>
+      </th>
+      {% endfor %}
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sal in salaries %}
+    <tr>
+      <td>{{ sal.employee.user.first_name }} {{ sal.employee.user.last_name }}</td>
+      <td>₹ {{ sal.net_salary }}</td>
+      <td>{{ sal.payment_date }}</td>
+      <td>
+        <a href="{% url 'dashboard:salary-edit' sal.id %}" class="btn btn-sm btn-primary">Edit</a>
+        {% if not sal.is_approved %}
+          <a href="{% url 'dashboard:salary-approve' sal.id %}" class="btn btn-sm btn-success">Approve</a>
+        {% else %}
+          <span class="badge bg-success">Approved</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "dashboard/pagination.html" with page_obj=page_obj %}
+
+{% endblock %}

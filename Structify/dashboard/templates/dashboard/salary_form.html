@@ -1,0 +1,11 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Salary Form{% endblock %}
+{% block content %}
+<h2>Edit Salary</h2>
+<form method="post" class="mt-3">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn btn-success">Save</button>
+  <a href="{% url 'dashboard:salaries' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

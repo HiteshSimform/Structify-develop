@@ -1,0 +1,58 @@
+# Python Files and Virtual Environments
+*.pyc
+*.pyo
+__pycache__/
+*.pyd
+.Python
+env/
+venv/
+venv/*
+
+# Django Specific Files
+db.sqlite3
+*.sqlite3
+/media/
+staticfiles/
+*.log
+*.pot
+*.py[cod]
+*.swp
+*.swo
+
+# Environment Variables
+.env
+*.env
+.env.*
+
+# Migrations (Optional)
+*/migrations/*
+
+# Django Debug Toolbar
+debug_toolbar/
+
+# System Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.bak
+*.orig
+*.rej
+
+# Byte-compiled/generated static files
+*.class
+
+# Redis Cache
+redis_cache/
+
+# Coverage, Logs, and Reports
+htmlcov/
+*.cover
+*.coverage
+*.log
+cover/
+cover_tests.xml
+.jupyter/
+
+# Deployment Files (Optional)
+__deploy__/

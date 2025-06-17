@@ -1,0 +1,55 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Leaves{% endblock %}
+
+{% block content %}
+<h2>Leave Applications</h2>
+
+<table class="table table-bordered table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>Employee</th>
+      <th>Type</th>
+      <th>Dates</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for lv in leaves %}
+    <tr id="leave-row-{{ lv.id }}">
+      <td>{{ lv.employee.user.first_name }} {{ lv.employee.user.last_name }}</td>
+      <td>{{ lv.leave_type.name }}</td>
+      <td>{{ lv.start_date }} → {{ lv.end_date }}</td>
+      <td id="status-{{ lv.id }}">{{ lv.status }}</td>
+      <td>
+        {% if lv.status == "Pending" %}
+          <button class="btn btn-sm btn-success" onclick="approve({{ lv.id }})">Approve</button>
+          <button class="btn btn-sm btn-danger"  onclick="reject({{ lv.id }})">Reject</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "dashboard/pagination.html" with page_obj=page_obj %}
+
+<script>
+function approve(id){
+  fetch(`/dashboard/leaves/${id}/ajax-approve/`)
+    .then(r=>r.json()).then(data=>{
+      if(data.success){
+        document.getElementById("status-"+id).innerText = data.new_status;
+      }
+    });
+}
+function reject(id){
+  fetch(`/dashboard/leaves/${id}/ajax-reject/`)
+    .then(r=>r.json()).then(data=>{
+      if(data.success){
+        document.getElementById("status-"+id).innerText = data.new_status;
+      }
+    });
+}
+</script>
+{% endblock %}
