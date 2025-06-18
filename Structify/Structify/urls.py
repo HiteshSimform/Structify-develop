@@ -28,4 +28,5 @@ urlpatterns = [
     path("leaves/", include("leaves.urls")),
     path("salary/", include("salaries.urls")),
     path("dashboard/", include("dashboard.urls")),
+    path("dashboardmain/", include("dashboardmain.urls")),
 ] + debug_toolbar_urls()

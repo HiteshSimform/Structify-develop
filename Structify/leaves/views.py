@@ -48,6 +48,23 @@ class LeaveTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVie
         instance.save()
 
 
+# class LeaveApplicationListCreateAPIView(generics.ListCreateAPIView):
+#     queryset = LeaveApplication.objects.filter(is_deleted=False)
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get_serializer_class(self):
+#         if self.request.method == "POST":
+#             return LeaveApplicationCreateSerializer
+#         return LeaveApplicationSerializer
+
+#     def perform_create(self, serializer):
+#         serializer.save(
+#             employee=self.request.user.employee,
+#             created_by=self.request.user,
+#             modified_by=self.request.user,
+#         )
+
+
 class LeaveApplicationListCreateAPIView(generics.ListCreateAPIView):
     queryset = LeaveApplication.objects.filter(is_deleted=False)
     permission_classes = [permissions.IsAuthenticated]
@@ -58,8 +75,9 @@ class LeaveApplicationListCreateAPIView(generics.ListCreateAPIView):
         return LeaveApplicationSerializer
 
     def perform_create(self, serializer):
+        employee = self.request.user.employee
         serializer.save(
-            employee=self.request.user.employee,
+            employee=employee,
             created_by=self.request.user,
             modified_by=self.request.user,
         )

@@ -8,6 +8,7 @@ from users.models import CustomUser
 class LeaveType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    is_paid = models.BooleanField(default=True)
     max_days = models.PositiveIntegerField()
 
     created_by = models.ForeignKey(

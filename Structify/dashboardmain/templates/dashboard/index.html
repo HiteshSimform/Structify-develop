@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Welcome to HRM Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Employees</h5>
+                <p class="card-text fs-4">{{ employees.count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Net Salary</h5>
+               <p class="card-text fs-4">₹ {{ total_salary|floatformat:2 }}</p>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Leave Applications</h5>
+                <p class="card-text fs-4">{{ leaves.count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mt-5">Department-wise Salary Summary</h4>
+<table class="table table-bordered mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Department</th>
+            <th>Total Salary</th>
+            <th>Employees</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dept in dept_salary_data %}
+        <tr>
+            <td>{{ dept.employee__department__name }}</td>
+            <td>₹ {{ dept.total_salary }}</td>
+            <td>{{ dept.employee_count }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No data available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4 class="mt-5">Latest Leave Requests</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>From</th>
+            <th>To</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for leave in leaves|slice:":5" %}
+        <tr>
+            <td>{{ leave.employee.user.name }}</td>
+            <td>{{ leave.leave_type.name }}</td>
+            <td>{{ leave.status }}</td>
+            <td>{{ leave.start_date }}</td>
+            <td>{{ leave.end_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

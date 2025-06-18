@@ -79,4 +79,4 @@ class Employees(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     def __str__(self):
-        return self.user.name
+        return f"{self.user.name} - {self.department.name if self.department else 'No Department'}"

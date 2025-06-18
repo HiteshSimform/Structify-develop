@@ -30,5 +30,5 @@ def carry_forward_leave_balances():
 
 @shared_task
 def allocate_annual_leave_balances():
-    for employee in CustomUser.objects.filter(role="EMPLOYEE", is_active=True):
+    for employee in CustomUser.objects.filter(role="Developer", is_active=True):
         allocate_leave_balances(employee=employee, created_by=employee)

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Leaves{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Leaves Overview</h2>
+
+<!-- Bootstrap nav‑tabs -->
+<ul class="nav nav-tabs" id="leaveTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="types-tab" data-bs-toggle="tab"
+            data-bs-target="#types" type="button" role="tab">Leave Types</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="apps-tab" data-bs-toggle="tab"
+            data-bs-target="#applications" type="button" role="tab">Applications</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="bal-tab" data-bs-toggle="tab"
+            data-bs-target="#balances" type="button" role="tab">Balances</button>
+  </li>
+</ul>
+
+<div class="tab-content pt-3">
+
+  <!-- Leave Types -->
+  <div class="tab-pane fade show active" id="types" role="tabpanel">
+    <table class="table table-bordered">
+      <thead class="table-dark">
+        <tr><th>#</th><th>Name</th><th>Description</th><th>Max Days / Year</th></tr>
+      </thead>
+      <tbody>
+        {% for lt in leave_types %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ lt.name }}</td>
+          <td>{{ lt.description }}</td>
+          <td>{{ lt.max_days }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No leave types.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Leave Applications -->
+  <div class="tab-pane fade" id="applications" role="tabpanel">
+    <table class="table table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th><th>Employee</th><th>Type</th><th>Status</th>
+          <th>From</th><th>To</th><th>Applied On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ app.employee.user.name }}</td>
+          <td>{{ app.leave_type.name }}</td>
+          <td>{{ app.status }}</td>
+          <td>{{ app.start_date }}</td>
+          <td>{{ app.end_date }}</td>
+          <td>{{ app.created_at|date:"Y-m-d" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No applications.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Leave Balances -->
+  <div class="tab-pane fade" id="balances" role="tabpanel">
+    <table class="table table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th><th>Employee</th><th>Type</th><th>Balance</th><th>Year</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bal in balances %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ bal.employee.user.name }}</td>
+          <td>{{ bal.leave_type.name }}</td>
+          <td>{{ bal.balance_days }}</td>
+          <td>{{ bal.year }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No balances.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

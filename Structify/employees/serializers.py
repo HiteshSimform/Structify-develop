@@ -92,9 +92,11 @@ class BasicEmployeeSerializer(serializers.ModelSerializer):
     Serializer for Employee details with limited fields for regular employees.
     """
 
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
     designation = serializers.CharField(source="designation.name", read_only=True)
     department = serializers.CharField(source="department.name", read_only=True)
 
     class Meta:
         model = Employees
-        fields = ["user__first_name", "user__last_name", "designation", "department"]
+        fields = ["first_name", "last_name", "designation", "department"]

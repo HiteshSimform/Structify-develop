@@ -38,10 +38,6 @@ class IsHRManagerSuperAdminOrSelf(BasePermission):
         if not hasattr(user, "employee"):
             return False
 
-        # designation = getattr(user.employee.designation, None)
-        # if not designation:
-        #     return False
-        # role_name = designation.name.strip().lower()
         designation = user.employee.designation
         if not designation:
             return False

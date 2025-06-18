@@ -85,20 +85,64 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         ]
 
 
+# class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = LeaveApplication
+#         fields = [
+#             "id",
+#             "employee",
+#             "leave_type",
+#             "start_date",
+#             "end_date",
+#             "reason",
+#         ]
+
+#     def validate(self, data):
+#         employee = self.context["request"].user.employee
+#         start = data["start_date"]
+#         end = data["end_date"]
+
+#         if start > end:
+#             raise serializers.ValidationError("Start date cannot be after end date.")
+
+#         if start < timezone.now().date():
+#             raise serializers.ValidationError("Leave cannot start in the past.")
+
+#         overlapping = LeaveApplication.objects.filter(
+#             employee=employee,
+#             start_date__lte=end,
+#             end_date__gte=start,
+#             is_deleted=False,
+#         ).exists()
+
+#         if overlapping:
+#             raise serializers.ValidationError("An overlapping leave already exists.")
+
+#         return data
+
+
 class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
+    is_paid = serializers.BooleanField(source="leave_type.is_paid", read_only=True)
+
     class Meta:
         model = LeaveApplication
         fields = [
             "id",
-            "employee",
             "leave_type",
             "start_date",
             "end_date",
+            "status",
             "reason",
+            "is_paid",
         ]
 
     def validate(self, data):
-        employee = self.context["request"].user.employee
+        user = self.context["request"].user
+        employee = user.employee
+
+        data["employee"] = employee
+
+        # Validation for start and end dates
         start = data["start_date"]
         end = data["end_date"]
 
@@ -108,6 +152,7 @@ class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
         if start < timezone.now().date():
             raise serializers.ValidationError("Leave cannot start in the past.")
 
+        # Check for overlapping leave applications
         overlapping = LeaveApplication.objects.filter(
             employee=employee,
             start_date__lte=end,
