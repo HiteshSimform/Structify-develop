@@ -88,15 +88,13 @@ class PublicEmployeeSerializer(serializers.ModelSerializer):
 
 
 class BasicEmployeeSerializer(serializers.ModelSerializer):
-    user = CustomUserSerializer(read_only=True)
-    department = PublicDepartmentSerializer(read_only=True)
-    designation = PublicDesignationSerializer(read_only=True)
+    """
+    Serializer for Employee details with limited fields for regular employees.
+    """
+
+    designation = serializers.CharField(source="designation.name", read_only=True)
+    department = serializers.CharField(source="department.name", read_only=True)
 
     class Meta:
         model = Employees
-        fields = [
-            "id",
-            "user",
-            "department",
-            "designation",
-        ]
+        fields = ["user__first_name", "user__last_name", "designation", "department"]

@@ -53,12 +53,6 @@ class SalaryCreateUpdateSerializer(serializers.ModelSerializer):
             return data
 
 
-# class DepartmentSalarySummarySerializer(serializers.Serializer):
-#     department = serializers.CharField()
-#     total_net_salary = serializers.DecimalField(max_digits=12, decimal_places=2)
-#     average_net_salary = serializers.DecimalField(max_digits=12, decimal_places=2)
-#     employee_count = serializers.IntegerField()
-
 class DepartmentSalarySummarySerializer(serializers.Serializer):
     department = serializers.CharField()
     employee_count = serializers.IntegerField()
@@ -69,7 +63,6 @@ class DepartmentSalarySummarySerializer(serializers.Serializer):
     min_net_salary = serializers.DecimalField(max_digits=12, decimal_places=2)
     max_net_salary = serializers.DecimalField(max_digits=12, decimal_places=2)
     last_payment_date = serializers.DateField()
-
 
 
 class DepartmentExpenseSerializer(serializers.Serializer):

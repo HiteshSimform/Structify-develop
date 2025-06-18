@@ -12,14 +12,12 @@ from .views import (
 )
 
 urlpatterns = [
-    # LeaveType
     path("types/", LeaveTypeListCreateAPIView.as_view(), name="leave-type-list-create"),
     path(
         "types/<int:pk>/",
         LeaveTypeRetrieveUpdateDestroyAPIView.as_view(),
         name="leave-type-detail",
     ),
-    # LeaveApplication
     path(
         "applications/",
         LeaveApplicationListCreateAPIView.as_view(),
@@ -35,7 +33,6 @@ urlpatterns = [
         LeaveApplicationStatusUpdateAPIView.as_view(),
         name="leave-app-status-update",
     ),
-    # LeaveBalance
     path(
         "balances/",
         LeaveBalanceListCreateAPIView.as_view(),

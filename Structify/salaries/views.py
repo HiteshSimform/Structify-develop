@@ -13,18 +13,10 @@ from .serializers import (
 from django.utils import timezone
 from .permissions import IsAdminOrHR
 from django.db.models import Sum, Avg, Count, F
-from users.permissions import IsMainAdminOrReadOnly
 
 from core.permissions import (
-    IsAuthenticated,
     IsAdminOrHR,
     IsMainAdminOrReadOnly,
-    IsSuperAdminOnly,
-    IsHR,
-    IsOwnerOrReadOnly,
-    IsSelfOrAdmin,
-    CanManageLeaves,
-    CanEditSalary,
 )
 from django.db.models import Sum, Count, F, ExpressionWrapper, DecimalField
 

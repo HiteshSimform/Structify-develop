@@ -20,6 +20,7 @@ from django.utils import timezone
 from .permissions import IsManagerHrOrAdmin
 from rest_framework.response import Response
 from rest_framework import filters
+from .utils import allocate_leave_balances
 
 
 class LeaveTypeListCreateAPIView(generics.ListCreateAPIView):
@@ -125,9 +126,6 @@ class LeaveBalanceReportAPIView(APIView):
 
         serializer = LeaveBalanceSerializer(balances, many=True)
         return Response(serializer.data)
-
-
-from .utils import allocate_leave_balances
 
 
 class AllocateLeaveBalanceView(APIView):
