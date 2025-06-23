@@ -18,6 +18,7 @@ from users.utils import is_hr_manager_or_superadmin
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from .throttles import EmployeeCreateRateThrottle
 
 
 class EmployeeListCreateView(generics.ListCreateAPIView):
@@ -29,6 +30,7 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
 
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHRManagerSuperAdminOrSelf]
+    throttle_classes = [EmployeeCreateRateThrottle]
 
     def get_queryset(self):
         """
