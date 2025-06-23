@@ -43,24 +43,30 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "debug_toolbar",
     "rest_framework",
     "rest_framework_simplejwt",
+    "oauth2_provider",
     "core",
-    "dashboard",
-    "dashboardmain",
     "users",
     "authentication",
     "employees",
+    "department",
     "designations",
     "leaves",
     "salaries",
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'oauth2_provider.backends.OAuth2Backend',
+)
+
 REST_FRAMEWORK = {
     # "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -68,7 +74,7 @@ REST_FRAMEWORK = {
         "employees.throttles.EmployeeCreateRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "employee_create": "2/hour", 
+        "employee_create": "2000/hour", 
     },
 }
 

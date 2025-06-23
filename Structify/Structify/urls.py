@@ -17,16 +17,14 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("users/", include("users.urls")),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path("auth/", include("authentication.urls")),
     path("des/", include("designations.urls")),
     path("emp/", include("employees.urls")),
     path("leaves/", include("leaves.urls")),
     path("salary/", include("salaries.urls")),
-    path("dashboard/", include("dashboard.urls")),
-    path("dashboardmain/", include("dashboardmain.urls")),
-] + debug_toolbar_urls()
+]
