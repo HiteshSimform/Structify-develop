@@ -42,7 +42,7 @@ class Department(models.Model):
 class Employees(models.Model):
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="employee"
-    )  # reverse relation
+    )
     phone_number = models.CharField(max_length=15)
     hire_date = models.DateField()
     department = models.ForeignKey(

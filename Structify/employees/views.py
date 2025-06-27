@@ -19,8 +19,11 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .throttles import EmployeeCreateRateThrottle
-
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from users.models import CustomUser
+from rest_framework.validators import ValidationError
+from designations.models import Designation
 class EmployeeListCreateView(generics.ListCreateAPIView):
     """
     List and create employee records.
@@ -32,6 +35,7 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsHRManagerSuperAdminOrSelf]
     throttle_classes = [EmployeeCreateRateThrottle]
 
+    @method_decorator(cache_page(60 * 60 * 2))
     def get_queryset(self):
         """
         Return a list of employees based on the user's role:
@@ -50,12 +54,45 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
         print("User is not linked to an employee record.")
         return Employees.objects.none()
 
+
+    # def perform_create(self, serializer):
+    #     user_id = self.request.data.get("user_id")
+    #     try:
+    #         user = CustomUser.objects.get(pk=user_id)
+    #     except CustomUser.DoesNotExist:
+    #         raise ValidationError("User not found.")
+
+    #     serializer.save(
+    #         user=user,
+    #         created_by=self.request.user,
+    #         modified_by=self.request.user
+    #     )
+
     def perform_create(self, serializer):
-        """
-        Handle employee record creation.
-        Only HR, Manager, and SuperAdmin can create records.
-        """
-        serializer.save(created_by=self.request.user, modified_by=self.request.user)
+        user_id = self.request.data.get("user_id")
+        designation_id = self.request.data.get("designation")
+        department_id = self.request.data.get("department")
+
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+        except CustomUser.DoesNotExist:
+            raise ValidationError("User not found.")
+
+        designation = None
+        if designation_id:
+            designation = Designation.objects.filter(pk=designation_id).first()
+
+        department = None
+        if department_id:
+            department = Department.objects.filter(pk=department_id).first()
+
+        serializer.save(
+            user=user,
+            designation=designation,
+            department=department,
+            created_by=self.request.user,
+            modified_by=self.request.user,
+        )
 
     def perform_update(self, serializer):
         """
@@ -136,7 +173,7 @@ class DepartmentListCreateAPIView(generics.GenericAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "description"]
     ordering_fields = ["name", "created_at"]
-    ordering = ["name"]  # default
+    ordering = ["name"]
 
     def get_serializer_class(self):
         if is_hr_manager_or_superadmin(self.request.user):

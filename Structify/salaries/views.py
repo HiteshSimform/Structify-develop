@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from django.utils import timezone
+from django.db.models import Sum, Avg, Count, F, DecimalField, ExpressionWrapper, Max
 
-# Create your views here.
-from django.shortcuts import render
-from rest_framework import generics, permissions
+
 from .models import Salary
 from .serializers import (
     SalarySerializer,
@@ -10,59 +11,69 @@ from .serializers import (
     DepartmentSalarySummarySerializer,
     DepartmentExpenseSerializer,
 )
-from django.utils import timezone
-from .permissions import IsAdminOrHR
-from django.db.models import Sum, Avg, Count, F
-
-from core.permissions import (
-    IsAdminOrHR,
-    IsMainAdminOrReadOnly,
-)
-from django.db.models import Sum, Count, F, ExpressionWrapper, DecimalField
+from .permissions import IsAdminOrHR, IsMainAdminOrReadOnly
 
 
 class BaseSalaryView(generics.GenericAPIView):
+    """
+    Abstracts queryset based on the current user's role.
+    """
+
     permission_classes = [permissions.IsAuthenticated, IsAdminOrHR]
 
     def get_queryset_for_user(self):
         user = self.request.user
-
         if user.is_superuser or (
-            hasattr(user, "employee") and user.employee.designation.name.lower() == "hr"
+            hasattr(user, "employee")
+            and user.employee.designation
+            and user.employee.designation.name.lower() == "hr"
         ):
             return Salary.objects.filter(is_deleted=False)
 
         if hasattr(user, "employee"):
-            return Salary.objects.filter(employee__user=user, is_deleted=False)
+            return Salary.objects.filter(employee=user.employee, is_deleted=False)
 
         return Salary.objects.none()
 
 
 class SalaryListCreateAPIView(BaseSalaryView, generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrHR]
-    queryset = Salary.objects.none()
+    """
+    GET: List all salaries (HR/Admin only, employee sees own)
+    POST: Create salary
+    """
 
     def get_serializer_class(self):
-        if self.request.method == "POST":
-            return SalaryCreateUpdateSerializer
-        return SalarySerializer
+        return (
+            SalaryCreateUpdateSerializer
+            if self.request.method == "POST"
+            else SalarySerializer
+        )
 
     def get_queryset(self):
         return self.get_queryset_for_user()
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, modified_by=self.request.user)
+        serializer.save(
+            created_by=self.request.user,
+            modified_by=self.request.user,
+        )
 
 
 class SalaryRetrieveUpdateDestroyAPIView(
     BaseSalaryView, generics.RetrieveUpdateDestroyAPIView
 ):
-    queryset = Salary.objects.none()
+    """
+    GET: Retrieve salary
+    PUT/PATCH: Update salary
+    DELETE: Soft delete salary
+    """
 
     def get_serializer_class(self):
-        if self.request.method == "GET":
-            return SalarySerializer
-        return SalaryCreateUpdateSerializer
+        return (
+            SalaryCreateUpdateSerializer
+            if self.request.method in ["PUT", "PATCH"]
+            else SalarySerializer
+        )
 
     def get_queryset(self):
         return self.get_queryset_for_user()
@@ -78,29 +89,42 @@ class SalaryRetrieveUpdateDestroyAPIView(
 
 
 class DepartmentSalarySummaryAPIView(generics.ListAPIView):
+    """
+    Department-wise salary analytics:
+    - Total net/gross/deductions
+    - Avg/Min/Max salaries
+    """
+
     serializer_class = DepartmentSalarySummarySerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrHR]
 
     def get_queryset(self):
         return (
             Salary.objects.filter(is_deleted=False)
-            .values("employee__department__name")
+            .values(department=F("employee__department__name"))
             .annotate(
-                department_name=F("employee__department__name"),
-                total_net_salary=Sum("net_salary"),
-                average_net_salary=Avg("net_salary"),
                 employee_count=Count("employee", distinct=True),
+                total_gross_salary=Sum(F("basic_salary") + F("allowances")),
+                total_net_salary=Sum("net_salary"),
+                total_deductions=Sum("deductions"),
+                average_net_salary=Avg("net_salary"),
+                min_net_salary=F("net_salary__min"),
+                max_net_salary=F("net_salary__max"),
+                last_payment_date=Max("payment_date"),
             )
-            .order_by("department_name")
         )
 
 
 class DepartmentExpenseAPIView(generics.ListAPIView):
+    """
+    Calculate total gross expenses department-wise.
+    """
+
     serializer_class = DepartmentExpenseSerializer
     permission_classes = [permissions.IsAuthenticated, IsMainAdminOrReadOnly]
 
     def get_queryset(self):
-        gross_salary_expr = ExpressionWrapper(
+        gross_salary = ExpressionWrapper(
             F("basic_salary") + F("allowances"),
             output_field=DecimalField(max_digits=12, decimal_places=2),
         )
@@ -109,6 +133,6 @@ class DepartmentExpenseAPIView(generics.ListAPIView):
             .values(department=F("employee__department__name"))
             .annotate(
                 employee_count=Count("employee", distinct=True),
-                total_expense=Sum(gross_salary_expr),
+                total_expense=Sum(gross_salary),
             )
         )

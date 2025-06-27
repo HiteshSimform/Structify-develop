@@ -17,6 +17,7 @@ class LeaveTypeSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "max_days",
+            "is_paid",
             "created_by",
             "modified_by",
             "created_at",
@@ -26,10 +27,11 @@ class LeaveTypeSerializer(serializers.ModelSerializer):
             "deleted_at",
         ]
         read_only_fields = [
-            "created_at",
-            "updated_at",
             "created_by",
             "modified_by",
+            "created_at",
+            "updated_at",
+            "is_deleted",
             "deleted_by",
             "deleted_at",
         ]
@@ -43,7 +45,8 @@ class LeaveTypeSerializer(serializers.ModelSerializer):
 class PublicLeaveTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveType
-        fields = ["id", "name", "max_days"]
+        fields = ["id", "name", "max_days", "is_paid"]
+
 
 
 class LeaveApplicationSerializer(serializers.ModelSerializer):
@@ -53,6 +56,8 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
     created_by = CustomUserSerializer(read_only=True)
     modified_by = CustomUserSerializer(read_only=True)
     deleted_by = CustomUserSerializer(read_only=True)
+    is_paid = serializers.BooleanField(source="leave_type.is_paid", read_only=True)
+    total_leave_days = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveApplication
@@ -65,6 +70,8 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
             "reason",
             "status",
             "approver",
+            "is_paid",
+            "total_leave_days",
             "created_by",
             "modified_by",
             "created_at",
@@ -73,52 +80,9 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
             "deleted_by",
             "deleted_at",
         ]
-        read_only_fields = [
-            "created_at",
-            "updated_at",
-            "status",
-            "approver",
-            "created_by",
-            "modified_by",
-            "deleted_by",
-            "deleted_at",
-        ]
 
-
-# class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = LeaveApplication
-#         fields = [
-#             "id",
-#             "employee",
-#             "leave_type",
-#             "start_date",
-#             "end_date",
-#             "reason",
-#         ]
-
-#     def validate(self, data):
-#         employee = self.context["request"].user.employee
-#         start = data["start_date"]
-#         end = data["end_date"]
-
-#         if start > end:
-#             raise serializers.ValidationError("Start date cannot be after end date.")
-
-#         if start < timezone.now().date():
-#             raise serializers.ValidationError("Leave cannot start in the past.")
-
-#         overlapping = LeaveApplication.objects.filter(
-#             employee=employee,
-#             start_date__lte=end,
-#             end_date__gte=start,
-#             is_deleted=False,
-#         ).exists()
-
-#         if overlapping:
-#             raise serializers.ValidationError("An overlapping leave already exists.")
-
-#         return data
+    def get_total_leave_days(self, obj):
+        return (obj.end_date - obj.start_date).days + 1
 
 
 class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
@@ -131,37 +95,54 @@ class LeaveApplicationCreateSerializer(serializers.ModelSerializer):
             "leave_type",
             "start_date",
             "end_date",
-            "status",
             "reason",
+            "status",
             "is_paid",
         ]
+        read_only_fields = ["status", "is_paid"]
 
     def validate(self, data):
         user = self.context["request"].user
-        employee = user.employee
+        employee = getattr(user, "employee", None)
+        if not employee:
+            raise serializers.ValidationError("Employee profile not found.")
 
         data["employee"] = employee
 
-        # Validation for start and end dates
-        start = data["start_date"]
-        end = data["end_date"]
+        start = data.get("start_date")
+        end = data.get("end_date")
+        leave_type = data.get("leave_type")
 
         if start > end:
             raise serializers.ValidationError("Start date cannot be after end date.")
-
         if start < timezone.now().date():
             raise serializers.ValidationError("Leave cannot start in the past.")
 
-        # Check for overlapping leave applications
+
         overlapping = LeaveApplication.objects.filter(
             employee=employee,
             start_date__lte=end,
             end_date__gte=start,
             is_deleted=False,
         ).exists()
-
         if overlapping:
             raise serializers.ValidationError("An overlapping leave already exists.")
+
+        total_requested = (end - start).days + 1
+        balance = LeaveBalance.objects.filter(
+            employee=employee,
+            leave_type=leave_type,
+            year=timezone.now().year,
+            is_deleted=False,
+        ).first()
+
+        if not balance:
+            raise serializers.ValidationError("No leave balance found for this type.")
+
+        if balance.balance_days < total_requested:
+            raise serializers.ValidationError(
+                f"Only {balance.balance_days} day(s) available. Not enough balance."
+            )
 
         return data
 
@@ -173,10 +154,51 @@ class LeaveApplicationUpdateStatusSerializer(serializers.ModelSerializer):
 
     def validate_status(self, value):
         if value not in ["Approved", "Rejected"]:
-            raise serializers.ValidationError(
-                "Invalid status. Choose Approved or Rejected."
-            )
+            raise serializers.ValidationError("Choose Approved or Rejected only.")
         return value
+
+
+class CompactLeaveApplicationSerializer(serializers.ModelSerializer):
+    leave_type = serializers.StringRelatedField()
+    is_paid = serializers.BooleanField(source="leave_type.is_paid", read_only=True)
+    total_leave_days = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveApplication
+        fields = [
+            "id",
+            "start_date",
+            "end_date",
+            "leave_type",
+            "status",
+            "is_paid",
+            "total_leave_days",
+        ]
+
+    def get_total_leave_days(self, obj):
+        return (obj.end_date - obj.start_date).days + 1
+
+
+class LeaveReportSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.user.name", read_only=True)
+    leave_type = serializers.CharField(source="leave_type.name", read_only=True)
+    is_paid = serializers.BooleanField(source="leave_type.is_paid", read_only=True)
+    total_days = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveApplication
+        fields = [
+            "employee_name",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "status",
+            "is_paid",
+            "total_days",
+        ]
+
+    def get_total_days(self, obj):
+        return (obj.end_date - obj.start_date).days + 1
 
 
 class LeaveBalanceSerializer(serializers.ModelSerializer):
@@ -202,25 +224,12 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
             "deleted_by",
             "deleted_at",
         ]
-        read_only_fields = [
-            "created_at",
-            "updated_at",
-            "created_by",
-            "modified_by",
-            "deleted_by",
-            "deleted_at",
-        ]
 
 
 class LeaveBalanceCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveBalance
-        fields = [
-            "employee",
-            "leave_type",
-            "balance_days",
-            "year",
-        ]
+        fields = ["employee", "leave_type", "balance_days", "year"]
 
     def validate_balance_days(self, value):
         if value < 0:
@@ -228,6 +237,15 @@ class LeaveBalanceCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_year(self, value):
-        if value < 2000 or value > timezone.now().year + 1:
+        current_year = timezone.now().year
+        if value < 2000 or value > current_year + 1:
             raise serializers.ValidationError("Enter a valid year.")
         return value
+
+
+class LeaveBalanceMinimalSerializer(serializers.ModelSerializer):
+    leave_type = serializers.StringRelatedField()
+
+    class Meta:
+        model = LeaveBalance
+        fields = ["leave_type", "balance_days"]

@@ -16,7 +16,4 @@ class LoginAPIView(APIView):
 
             user_data = serializer.validated_data
             return Response(user_data, status=status.HTTP_200_OK)
-
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

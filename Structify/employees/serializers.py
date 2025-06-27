@@ -6,7 +6,7 @@ from designations.serializers import PublicDesignationSerializer
 # from leaves.serializers import LeaveBalanceSerializer
 from leaves.models import LeaveBalance
 from django.utils import timezone
-
+from designations.models import Designation
 
 class DepartmentSerializer(serializers.ModelSerializer):
     created_by = CustomUserSerializer(read_only=True)
@@ -44,10 +44,34 @@ class PublicDepartmentSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
+# class EmployeeSerializer(serializers.ModelSerializer):
+#     user = CustomUserSerializer(read_only=True)
+#     designation = PublicDesignationSerializer(read_only=True)
+#     department = PublicDepartmentSerializer(read_only=True)
+
+#     class Meta:
+#         model = Employees
+#         fields = [
+#             "id",
+#             "user",
+#             "phone_number",
+#             "hire_date",
+#             "department",
+#             "designation",
+#         ]
+
+
 class EmployeeSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer(read_only=True)
-    designation = PublicDesignationSerializer(read_only=True)
-    department = PublicDepartmentSerializer(read_only=True)
+    designation = serializers.PrimaryKeyRelatedField(
+        queryset=Designation.objects.all(), write_only=True, required=False, allow_null=True
+    )
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(), write_only=True, required=False, allow_null=True
+    )
+    # For read, show nested data:
+    designation_details = PublicDesignationSerializer(source="designation", read_only=True)
+    department_details = PublicDepartmentSerializer(source="department", read_only=True)
 
     class Meta:
         model = Employees
@@ -58,7 +82,16 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "hire_date",
             "department",
             "designation",
+            "department_details",
+            "designation_details",
         ]
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Remove department and designation primary keys, show nested only
+        ret["department"] = ret.pop("department_details")
+        ret["designation"] = ret.pop("designation_details")
+        return ret
 
 
 class PublicEmployeeSerializer(serializers.ModelSerializer):

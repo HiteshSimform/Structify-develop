@@ -7,7 +7,7 @@ from .views import (
     LeaveApplicationStatusUpdateAPIView,
     LeaveBalanceListCreateAPIView,
     LeaveBalanceRetriveUpdateDestroyAPIView,
-    LeaveBalanceReportAPIView,
+    LeaveReportListAPIView,
     AllocateLeaveBalanceView,
 )
 
@@ -44,9 +44,9 @@ urlpatterns = [
         name="leave-balance-detail",
     ),
     path(
-        "report/leave-balance/",
-        LeaveBalanceReportAPIView.as_view(),
-        name="leave-balance-report",
+        "report/leave-application/",
+        LeaveReportListAPIView.as_view(),
+        name="leave-application-report",
     ),
     path(
         "allocate-leaves/", AllocateLeaveBalanceView.as_view(), name="allocate-leaves"

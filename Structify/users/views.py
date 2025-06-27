@@ -11,6 +11,8 @@ from .models import CustomUser
 from .serializers import UserRegisterSerializer
 import os
 from dotenv import load_dotenv
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 load_dotenv()
 

@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 from decouple import config
 from celery.schedules import crontab
+from decouple import config
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,27 +47,25 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "oauth2_provider",
-    "core",
     "users",
     "authentication",
     "employees",
-    "department",
     "designations",
     "leaves",
     "salaries",
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'oauth2_provider.backends.OAuth2Backend',
+    "django.contrib.auth.backends.ModelBackend",
+    "oauth2_provider.backends.OAuth2Backend",
 )
 
 REST_FRAMEWORK = {
     # "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework.authentication.SessionAuthentication',
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -74,7 +73,7 @@ REST_FRAMEWORK = {
         "employees.throttles.EmployeeCreateRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "employee_create": "2000/hour", 
+        "employee_create": "2000/hour",
     },
 }
 
@@ -193,3 +192,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month=1, month_of_year=1),
     },
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")

@@ -1,34 +1,34 @@
 from celery import shared_task
-from .models import LeaveBalance
 from django.utils import timezone
+from .models import LeaveBalance
 from users.models import CustomUser
-from .utils import allocate_leave_balances
 
 
 @shared_task
 def carry_forward_leave_balances():
     current_year = timezone.now().year
-    prev_year = current_year - 1
+    previous_year = current_year - 1
 
-    previous_balances = LeaveBalance.objects.filter(year=prev_year, is_deleted=False)
+    prev_balances = LeaveBalance.objects.filter(year=previous_year, is_deleted=False)
 
-    for balance in previous_balances:
+    for balance in prev_balances:
+        if not balance.leave_type.is_paid:
+            continue
+
         new_balance, created = LeaveBalance.objects.get_or_create(
             employee=balance.employee,
             leave_type=balance.leave_type,
             year=current_year,
             defaults={
-                "balance_days": balance.balance_days,
+                "balance_days": 0,
                 "created_by": balance.created_by,
                 "modified_by": balance.modified_by,
             },
         )
+
         if not created:
             new_balance.balance_days += balance.balance_days
-            new_balance.save()
+        else:
+            new_balance.balance_days = balance.balance_days
 
-
-@shared_task
-def allocate_annual_leave_balances():
-    for employee in CustomUser.objects.filter(role="Developer", is_active=True):
-        allocate_leave_balances(employee=employee, created_by=employee)
+        new_balance.save()
